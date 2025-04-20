@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Audio Transcriber
+
+Audio Transcriber is a web application built with Next.js that allows users to transcribe audio files directly in the browser. It leverages the power of Transformers.js and Hugging Face models to perform client-side speech-to-text conversion, providing a fast, accurate, and privacy-focused solution for audio transcription.
+
+## Features
+
+- Client-side audio transcription using Transformers.js
+- Utilizes Hugging Face's pre-trained speech recognition models
+- Support for various audio file formats
+- Real-time audio recording and transcription
+- Export transcriptions as TXT or JSON
+
+## Technologies Used
+
+- [Next.js](https://nextjs.org/) - React framework for building the web application
+- [React](https://reactjs.org/) - JavaScript library for building user interfaces
+- [TypeScript](https://www.typescriptlang.org/) - Typed superset of JavaScript
+- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
+- [Transformers.js](https://huggingface.co/docs/transformers.js) - JavaScript library for state-of-the-art Machine Learning
+- [Hugging Face Models](https://huggingface.co/models) - Pre-trained models for various AI tasks, including speech recognition
+- [Web Workers API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API) - For running transcription in background threads
+- [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) - For audio processing and recording
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js (version 14 or later)
+- npm
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repository:
+   ```
+   git clone https://github.com/subigya-js/audio-transcriber.git
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   ```
+   cd audio-transcriber
+   ```
 
-## Learn More
+2. Install dependencies:
+   ```
+   npm install
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+3. Run the development server:
+   ```
+   npm run dev
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Usage
 
-## Deploy on Vercel
+1. Upload an audio file or record audio directly in the browser.
+2. Click the "Transcribe" button to start the transcription process.
+3. The application will use Transformers.js to load the appropriate Hugging Face model for speech recognition.
+4. View the transcription results in real-time as they are processed.
+5. Once transcription is complete, you can export the results as TXT or JSON.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/app/` - Next.js app router and page components
+- `src/components/` - React components used throughout the application
+- `src/hooks/` - Custom React hooks, including the transcription logic
+- `src/utils/` - Utility functions and helpers
+- `public/` - Static assets and files
+
+## How It Works
+
+The Audio Transcriber uses Transformers.js to load and run Hugging Face's speech recognition models directly in the browser. This approach allows for:
+
+1. Privacy: All processing happens on the client-side, so audio data never leaves the user's device.
+2. Speed: No need to upload audio files to a server, resulting in faster transcription times.
+3. Offline Capability: Once the model is loaded, the app can work without an internet connection.
+
+The transcription process is handled by a Web Worker, ensuring that the main thread remains responsive during computationally intensive tasks.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Acknowledgments
+
+- [Hugging Face](https://huggingface.co/) for providing state-of-the-art NLP models and tools
+- [Transformers.js](https://huggingface.co/docs/transformers.js) for enabling client-side machine learning in JavaScript
+- [Next.js](https://nextjs.org/) for the amazing React framework
+
+## Contact
+
+If you have any questions or feedback, please open an issue in the GitHub repository.
