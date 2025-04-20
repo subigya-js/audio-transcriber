@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Transcriber } from "../../hooks/useTranscriber";
 import Constants from "../../utils/Constants";
 import AudioPlayer from "./AudioPlayer";
@@ -145,15 +145,16 @@ export function AudioManager(props: { transcriber: Transcriber }) {
     const [audioDownloadUrl, setAudioDownloadUrl] = useState<
         string | undefined
     >(undefined);
+    const [isMediaDevicesAvailable, setIsMediaDevicesAvailable] = useState(false);
 
     const isAudioLoading = progress !== undefined;
 
-    const resetAudio = () => {
+    const resetAudio = useCallback(() => {
         setAudioData(undefined);
         setAudioDownloadUrl(undefined);
-    };
+    }, []);
 
-    const setAudioFromDownload = async (
+    const setAudioFromDownload = useCallback(async (
         data: ArrayBuffer,
         mimeType: string,
     ) => {
@@ -170,9 +171,9 @@ export function AudioManager(props: { transcriber: Transcriber }) {
             source: AudioSource.URL,
             mimeType: mimeType,
         });
-    };
+    }, []);
 
-    const setAudioFromRecording = async (data: Blob) => {
+    const setAudioFromRecording = useCallback(async (data: Blob) => {
         resetAudio();
         setProgress(0);
         const blobUrl = URL.createObjectURL(data);
@@ -195,9 +196,9 @@ export function AudioManager(props: { transcriber: Transcriber }) {
             });
         };
         fileReader.readAsArrayBuffer(data);
-    };
+    }, [resetAudio]);
 
-    const downloadAudioFromUrl = async (
+    const downloadAudioFromUrl = useCallback(async (
         requestAbortController: AbortController,
     ) => {
         if (audioDownloadUrl) {
@@ -226,7 +227,7 @@ export function AudioManager(props: { transcriber: Transcriber }) {
                 setProgress(undefined);
             }
         }
-    };
+    }, [audioDownloadUrl, setAudioFromDownload]);
 
     // When URL changes, download audio
     useEffect(() => {
@@ -237,7 +238,12 @@ export function AudioManager(props: { transcriber: Transcriber }) {
                 requestAbortController.abort();
             };
         }
-    }, [audioDownloadUrl]);
+    }, [audioDownloadUrl, downloadAudioFromUrl]);
+
+    // Check for media devices availability
+    useEffect(() => {
+        setIsMediaDevicesAvailable(!!navigator.mediaDevices);
+    }, []);
 
     return (
         <>
@@ -265,7 +271,7 @@ export function AudioManager(props: { transcriber: Transcriber }) {
                             });
                         }}
                     />
-                    {navigator.mediaDevices && (
+                    {isMediaDevicesAvailable && (
                         <>
                             <VerticalBar />
                             <RecordTile
@@ -344,16 +350,11 @@ function SettingsTile(props: {
         setShowModal(false);
     };
 
-    const onSubmit = (url: string) => {
-        onClose();
-    };
-
     return (
         <div className={props.className}>
             <Tile icon={props.icon} onClick={onClick} />
             <SettingsModal
                 show={showModal}
-                onSubmit={onSubmit}
                 onClose={onClose}
                 transcriber={props.transcriber}
             />
@@ -363,13 +364,12 @@ function SettingsTile(props: {
 
 function SettingsModal(props: {
     show: boolean;
-    onSubmit: (url: string) => void;
     onClose: () => void;
     transcriber: Transcriber;
 }) {
     const names = Object.values(LANGUAGES).map(titleCase);
 
-    const models = {
+    const models: { [key: string]: number[] } = {
         // Original checkpoints
         'Xenova/whisper-tiny': [41, 152],
         'Xenova/whisper-base': [77, 291],
@@ -398,8 +398,7 @@ function SettingsModal(props: {
                             .filter(
                                 (key) =>
                                     props.transcriber.quantized ||
-                                    // @ts-expect-ignore
-                                    models[key].length == 2,
+                                    models[key].length === 2,
                             )
                             .filter(
                                 (key) => (
@@ -410,7 +409,6 @@ function SettingsModal(props: {
                                 <option key={key} value={key}>{`${key}${
                                     (props.transcriber.multilingual || key.startsWith('distil-whisper/')) ? "" : ".en"
                                 } (${
-                                    // @ts-expect-ignore
                                     models[key][
                                         props.transcriber.quantized ? 0 : 1
                                     ]
@@ -487,7 +485,7 @@ function SettingsModal(props: {
                 </>
             }
             onClose={props.onClose}
-            onSubmit={() => {}}
+            onSubmit={props.onClose}
         />
     );
 }
@@ -544,7 +542,7 @@ function UrlModal(props: {
     onSubmit: (url: string) => void;
     onClose: () => void;
 }) {
-    const [url, setUrl] = useState(Constants.DEFAULT_AUDIO_URL);
+    const [url, setUrl] = useState(Constants.getDefaultAudioUrl());
 
     const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setUrl(event.target.value);
