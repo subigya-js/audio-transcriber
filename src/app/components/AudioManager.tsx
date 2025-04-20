@@ -1,13 +1,13 @@
 "use client";
 
 import axios from "axios";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Transcriber } from "../../hooks/useTranscriber";
 import Constants from "../../utils/Constants";
 import AudioPlayer from "./AudioPlayer";
-import AudioRecorder from "./AudioRecorder";
+// import AudioRecorder from "./AudioRecorder";
 import Modal from "./modal/Modal";
-import { UrlInput } from "./modal/UrlInput";
+// import { UrlInput } from "./modal/UrlInput";
 import Progress from "./Progress";
 import { TranscribeButton } from "./TranscribeButton";
 
@@ -128,31 +128,26 @@ const LANGUAGES = {
 export enum AudioSource {
     URL = "URL",
     FILE = "FILE",
-    RECORDING = "RECORDING",
+    // RECORDING = "RECORDING",
 }
 
 export function AudioManager(props: { transcriber: Transcriber }) {
     const [progress, setProgress] = useState<number | undefined>(undefined);
     const [audioData, setAudioData] = useState<
         | {
-              buffer: AudioBuffer;
-              url: string;
-              source: AudioSource;
-              mimeType: string;
-          }
+            buffer: AudioBuffer;
+            url: string;
+            source: AudioSource;
+            mimeType: string;
+        }
         | undefined
     >(undefined);
     const [audioDownloadUrl, setAudioDownloadUrl] = useState<
         string | undefined
     >(undefined);
-    const [isMediaDevicesAvailable, setIsMediaDevicesAvailable] = useState(false);
+    // const [isMediaDevicesAvailable, setIsMediaDevicesAvailable] = useState(false);
 
     const isAudioLoading = progress !== undefined;
-
-    const resetAudio = useCallback(() => {
-        setAudioData(undefined);
-        setAudioDownloadUrl(undefined);
-    }, []);
 
     const setAudioFromDownload = useCallback(async (
         data: ArrayBuffer,
@@ -173,30 +168,30 @@ export function AudioManager(props: { transcriber: Transcriber }) {
         });
     }, []);
 
-    const setAudioFromRecording = useCallback(async (data: Blob) => {
-        resetAudio();
-        setProgress(0);
-        const blobUrl = URL.createObjectURL(data);
-        const fileReader = new FileReader();
-        fileReader.onprogress = (event) => {
-            setProgress(event.loaded / event.total || 0);
-        };
-        fileReader.onloadend = async () => {
-            const audioCTX = new AudioContext({
-                sampleRate: Constants.SAMPLING_RATE,
-            });
-            const arrayBuffer = fileReader.result as ArrayBuffer;
-            const decoded = await audioCTX.decodeAudioData(arrayBuffer);
-            setProgress(undefined);
-            setAudioData({
-                buffer: decoded,
-                url: blobUrl,
-                source: AudioSource.RECORDING,
-                mimeType: data.type,
-            });
-        };
-        fileReader.readAsArrayBuffer(data);
-    }, [resetAudio]);
+    // const setAudioFromRecording = useCallback(async (data: Blob) => {
+    //     resetAudio();
+    //     setProgress(0);
+    //     const blobUrl = URL.createObjectURL(data);
+    //     const fileReader = new FileReader();
+    //     fileReader.onprogress = (event) => {
+    //         setProgress(event.loaded / event.total || 0);
+    //     };
+    //     fileReader.onloadend = async () => {
+    //         const audioCTX = new AudioContext({
+    //             sampleRate: Constants.SAMPLING_RATE,
+    //         });
+    //         const arrayBuffer = fileReader.result as ArrayBuffer;
+    //         const decoded = await audioCTX.decodeAudioData(arrayBuffer);
+    //         setProgress(undefined);
+    //         setAudioData({
+    //             buffer: decoded,
+    //             url: blobUrl,
+    //             source: AudioSource.RECORDING,
+    //             mimeType: data.type,
+    //         });
+    //     };
+    //     fileReader.readAsArrayBuffer(data);
+    // }, [resetAudio]);
 
     const downloadAudioFromUrl = useCallback(async (
         requestAbortController: AbortController,
@@ -240,27 +235,27 @@ export function AudioManager(props: { transcriber: Transcriber }) {
         }
     }, [audioDownloadUrl, downloadAudioFromUrl]);
 
-    // Check for media devices availability
-    useEffect(() => {
-        setIsMediaDevicesAvailable(!!navigator.mediaDevices);
-    }, []);
+    // // Check for media devices availability
+    // useEffect(() => {
+    //     setIsMediaDevicesAvailable(!!navigator.mediaDevices);
+    // }, []);
 
     return (
         <>
             <div className='flex flex-col justify-center items-center rounded-lg bg-white shadow-xl shadow-black/5 ring-1 ring-slate-700/10'>
-                <div className='flex flex-row space-x-2 py-2 w-full px-2'>
-                    <UrlTile
+                <div className='flex flex-row space-x-2 py-2 w-full px-2 cursor-pointer'>
+                    {/* <UrlTile
                         icon={<AnchorIcon />}
                         text={"From URL"}
                         onUrlUpdate={(e) => {
                             props.transcriber.onInputChange();
                             setAudioDownloadUrl(e);
                         }}
-                    />
-                    <VerticalBar />
+                    /> */}
+                    {/* <VerticalBar /> */}
                     <FileTile
                         icon={<FolderIcon />}
-                        text={"From file"}
+                        text={"Upload file"}
                         onFileUpdate={(decoded, blobUrl, mimeType) => {
                             props.transcriber.onInputChange();
                             setAudioData({
@@ -271,7 +266,7 @@ export function AudioManager(props: { transcriber: Transcriber }) {
                             });
                         }}
                     />
-                    {isMediaDevicesAvailable && (
+                    {/* {isMediaDevicesAvailable && (
                         <>
                             <VerticalBar />
                             <RecordTile
@@ -283,7 +278,7 @@ export function AudioManager(props: { transcriber: Transcriber }) {
                                 }}
                             />
                         </>
-                    )}
+                    )} */}
                 </div>
                 {
                     <AudioDataBar
@@ -406,13 +401,11 @@ function SettingsModal(props: {
                                 )
                             )
                             .map((key) => (
-                                <option key={key} value={key}>{`${key}${
-                                    (props.transcriber.multilingual || key.startsWith('distil-whisper/')) ? "" : ".en"
-                                } (${
-                                    models[key][
-                                        props.transcriber.quantized ? 0 : 1
+                                <option key={key} value={key}>{`${key}${(props.transcriber.multilingual || key.startsWith('distil-whisper/')) ? "" : ".en"
+                                    } (${models[key][
+                                    props.transcriber.quantized ? 0 : 1
                                     ]
-                                }MB)`}</option>
+                                    }MB)`}</option>
                             ))}
                     </select>
                     <div className='flex justify-between items-center mb-3 px-1'>
@@ -490,10 +483,6 @@ function SettingsModal(props: {
     );
 }
 
-function VerticalBar() {
-    return <div className='w-[1px] bg-slate-200'></div>;
-}
-
 function AudioDataBar(props: { progress: number }) {
     return <ProgressBar progress={`${Math.round(props.progress * 100)}%`} />;
 }
@@ -509,65 +498,65 @@ function ProgressBar(props: { progress: string }) {
     );
 }
 
-function UrlTile(props: {
-    icon: React.ReactNode;
-    text: string;
-    onUrlUpdate: (url: string) => void;
-}) {
-    const [showModal, setShowModal] = useState(false);
+// function UrlTile(props: {
+//     icon: React.ReactNode;
+//     text: string;
+//     onUrlUpdate: (url: string) => void;
+// }) {
+//     const [showModal, setShowModal] = useState(false);
 
-    const onClick = () => {
-        setShowModal(true);
-    };
+//     const onClick = () => {
+//         setShowModal(true);
+//     };
 
-    const onClose = () => {
-        setShowModal(false);
-    };
+//     const onClose = () => {
+//         setShowModal(false);
+//     };
 
-    const onSubmit = (url: string) => {
-        props.onUrlUpdate(url);
-        onClose();
-    };
+//     const onSubmit = (url: string) => {
+//         props.onUrlUpdate(url);
+//         onClose();
+//     };
 
-    return (
-        <>
-            <Tile icon={props.icon} text={props.text} onClick={onClick} />
-            <UrlModal show={showModal} onSubmit={onSubmit} onClose={onClose} />
-        </>
-    );
-}
+//     return (
+//         <>
+//             <Tile icon={props.icon} text={props.text} onClick={onClick} />
+//             <UrlModal show={showModal} onSubmit={onSubmit} onClose={onClose} />
+//         </>
+//     );
+// }
 
-function UrlModal(props: {
-    show: boolean;
-    onSubmit: (url: string) => void;
-    onClose: () => void;
-}) {
-    const [url, setUrl] = useState(Constants.getDefaultAudioUrl());
+// function UrlModal(props: {
+//     show: boolean;
+//     onSubmit: (url: string) => void;
+//     onClose: () => void;
+// }) {
+//     const [url, setUrl] = useState(Constants.getDefaultAudioUrl());
 
-    const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setUrl(event.target.value);
-    };
+//     const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+//         setUrl(event.target.value);
+//     };
 
-    const onSubmit = () => {
-        props.onSubmit(url);
-    };
+//     const onSubmit = () => {
+//         props.onSubmit(url);
+//     };
 
-    return (
-        <Modal
-            show={props.show}
-            title={"From URL"}
-            content={
-                <>
-                    {"Enter the URL of the audio file you want to load."}
-                    <UrlInput onChange={onChange} value={url} />
-                </>
-            }
-            onClose={props.onClose}
-            submitText={"Load"}
-            onSubmit={onSubmit}
-        />
-    );
-}
+//     return (
+//         <Modal
+//             show={props.show}
+//             title={"From URL"}
+//             content={
+//                 <>
+//                     {"Enter the URL of the audio file you want to load."}
+//                     <UrlInput onChange={onChange} value={url} />
+//                 </>
+//             }
+//             onClose={props.onClose}
+//             submitText={"Load"}
+//             onSubmit={onSubmit}
+//         />
+//     );
+// }
 
 function FileTile(props: {
     icon: React.ReactNode;
@@ -578,23 +567,19 @@ function FileTile(props: {
         mimeType: string,
     ) => void;
 }) {
-    // const audioPlayer = useRef<HTMLAudioElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Create hidden input element
-    const elem = document.createElement("input");
-    elem.type = "file";
-    elem.oninput = (event) => {
-        // Make sure we have files to use
-        const files = (event.target as HTMLInputElement).files;
-        if (!files) return;
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
 
-        // Create a blob that we can use as an src for our audio element
-        const urlObj = URL.createObjectURL(files[0]);
-        const mimeType = files[0].type;
+        const file = files[0];
+        const urlObj = URL.createObjectURL(file);
+        const mimeType = file.type;
 
         const reader = new FileReader();
-        reader.addEventListener("load", async (e) => {
-            const arrayBuffer = e.target?.result as ArrayBuffer; // Get the ArrayBuffer
+        reader.onload = async (e) => {
+            const arrayBuffer = e.target?.result as ArrayBuffer;
             if (!arrayBuffer) return;
 
             const audioCTX = new AudioContext({
@@ -604,96 +589,105 @@ function FileTile(props: {
             const decoded = await audioCTX.decodeAudioData(arrayBuffer);
 
             props.onFileUpdate(decoded, urlObj, mimeType);
-        });
-        reader.readAsArrayBuffer(files[0]);
+        };
+        reader.readAsArrayBuffer(file);
 
-        // Reset files
-        elem.value = "";
-    };
-
-    return (
-        <>
-            <Tile
-                icon={props.icon}
-                text={props.text}
-                onClick={() => elem.click()}
-            />
-        </>
-    );
-}
-
-function RecordTile(props: {
-    icon: React.ReactNode;
-    text: string;
-    setAudioData: (data: Blob) => void;
-}) {
-    const [showModal, setShowModal] = useState(false);
-
-    const onClick = () => {
-        setShowModal(true);
-    };
-
-    const onClose = () => {
-        setShowModal(false);
-    };
-
-    const onSubmit = (data: Blob | undefined) => {
-        if (data) {
-            props.setAudioData(data);
-            onClose();
+        // Reset file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
         }
     };
 
     return (
         <>
-            <Tile icon={props.icon} text={props.text} onClick={onClick} />
-            <RecordModal
-                show={showModal}
-                onSubmit={onSubmit}
-                onClose={onClose}
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+                accept="audio/*"
+            />
+            <Tile
+                icon={props.icon}
+                text={props.text}
+                onClick={() => fileInputRef.current?.click()}
             />
         </>
     );
 }
 
-function RecordModal(props: {
-    show: boolean;
-    onSubmit: (data: Blob | undefined) => void;
-    onClose: () => void;
-}) {
-    const [audioBlob, setAudioBlob] = useState<Blob>();
+// function RecordTile(props: {
+//     icon: React.ReactNode;
+//     text: string;
+//     setAudioData: (data: Blob) => void;
+// }) {
+//     const [showModal, setShowModal] = useState(false);
 
-    const onRecordingComplete = (blob: Blob) => {
-        setAudioBlob(blob);
-    };
+//     const onClick = () => {
+//         setShowModal(true);
+//     };
 
-    const onSubmit = () => {
-        props.onSubmit(audioBlob);
-        setAudioBlob(undefined);
-    };
+//     const onClose = () => {
+//         setShowModal(false);
+//     };
 
-    const onClose = () => {
-        props.onClose();
-        setAudioBlob(undefined);
-    };
+//     const onSubmit = (data: Blob | undefined) => {
+//         if (data) {
+//             props.setAudioData(data);
+//             onClose();
+//         }
+//     };
 
-    return (
-        <Modal
-            show={props.show}
-            title={"From Recording"}
-            content={
-                <>
-                    {"Record audio using your microphone"}
-                    <AudioRecorder onRecordingComplete={onRecordingComplete} />
-                </>
-            }
-            onClose={onClose}
-            submitText={"Load"}
-            submitEnabled={audioBlob !== undefined}
-            onSubmit={onSubmit}
-        />
-    );
-}
+//     return (
+//         <>
+//             <Tile icon={props.icon} text={props.text} onClick={onClick} />
+//             <RecordModal
+//                 show={showModal}
+//                 onSubmit={onSubmit}
+//                 onClose={onClose}
+//             />
+//         </>
+//     );
+// }
+
+// function RecordModal(props: {
+//     show: boolean;
+//     onSubmit: (data: Blob | undefined) => void;
+//     onClose: () => void;
+// }) {
+//     const [audioBlob, setAudioBlob] = useState<Blob>();
+
+//     const onRecordingComplete = (blob: Blob) => {
+//         setAudioBlob(blob);
+//     };
+
+//     const onSubmit = () => {
+//         props.onSubmit(audioBlob);
+//         setAudioBlob(undefined);
+//     };
+
+//     const onClose = () => {
+//         props.onClose();
+//         setAudioBlob(undefined);
+//     };
+
+//     return (
+//         <Modal
+//             show={props.show}
+//             title={"From Recording"}
+//             content={
+//                 <>
+//                     {"Record audio using your microphone"}
+//                     <AudioRecorder onRecordingComplete={onRecordingComplete} />
+//                 </>
+//             }
+//             onClose={onClose}
+//             submitText={"Load"}
+//             submitEnabled={audioBlob !== undefined}
+//             onSubmit={onSubmit}
+//         />
+//     );
+// }
 
 function Tile(props: {
     icon: React.ReactNode;
@@ -715,23 +709,23 @@ function Tile(props: {
     );
 }
 
-function AnchorIcon() {
-    return (
-        <svg
-            xmlns='http://www.w3.org/2000/svg'
-            fill='none'
-            viewBox='0 0 24 24'
-            strokeWidth='1.5'
-            stroke='currentColor'
-        >
-            <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                d='M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244'
-            />
-        </svg>
-    );
-}
+// function AnchorIcon() {
+//     return (
+//         <svg
+//             xmlns='http://www.w3.org/2000/svg'
+//             fill='none'
+//             viewBox='0 0 24 24'
+//             strokeWidth='1.5'
+//             stroke='currentColor'
+//         >
+//             <path
+//                 strokeLinecap='round'
+//                 strokeLinejoin='round'
+//                 d='M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244'
+//             />
+//         </svg>
+//     );
+// }
 
 function FolderIcon() {
     return (
@@ -774,20 +768,20 @@ function SettingsIcon() {
     );
 }
 
-function MicrophoneIcon() {
-    return (
-        <svg
-            xmlns='http://www.w3.org/2000/svg'
-            fill='none'
-            viewBox='0 0 24 24'
-            strokeWidth={1.5}
-            stroke='currentColor'
-        >
-            <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                d='M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z'
-            />
-        </svg>
-    );
-}
+// function MicrophoneIcon() {
+//     return (
+//         <svg
+//             xmlns='http://www.w3.org/2000/svg'
+//             fill='none'
+//             viewBox='0 0 24 24'
+//             strokeWidth={1.5}
+//             stroke='currentColor'
+//         >
+//             <path
+//                 strokeLinecap='round'
+//                 strokeLinejoin='round'
+//                 d='M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z'
+//             />
+//         </svg>
+//     );
+// }
