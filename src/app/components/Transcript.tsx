@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { TranscriberData } from "../../hooks/useTranscriber";
 import { formatAudioTimestamp } from "../../utils/AudioUtils";
@@ -26,19 +26,26 @@ export default function Transcript({ transcribedData }: Props) {
             .map((chunk) => chunk.text)
             .join("")
             .trim();
+        const summary = transcribedData?.summary ?? "";
 
-        const blob = new Blob([text], { type: "text/plain" });
-        saveBlob(blob, "transcript.txt");
+        const content = `Transcript:\n\n${text}\n\nSummary:\n\n${summary}`;
+        const blob = new Blob([content], { type: "text/plain" });
+        saveBlob(blob, "transcript_and_summary.txt");
     };
     const exportJSON = () => {
-        let jsonData = JSON.stringify(transcribedData?.chunks ?? [], null, 2);
+        const data = {
+            transcript: transcribedData?.text ?? "",
+            summary: transcribedData?.summary ?? "",
+            chunks: transcribedData?.chunks ?? [],
+        };
+        let jsonData = JSON.stringify(data, null, 2);
 
         // post-process the JSON to make it more readable
         const regex = /(    "timestamp": )\[\s+(\S+)\s+(\S+)\s+\]/gm;
         jsonData = jsonData.replace(regex, "$1[$2 $3]");
 
         const blob = new Blob([jsonData], { type: "application/json" });
-        saveBlob(blob, "transcript.json");
+        saveBlob(blob, "transcript_and_summary.json");
     };
 
     // Scroll to the bottom when the component updates
@@ -58,22 +65,28 @@ export default function Transcript({ transcribedData }: Props) {
     });
 
     return (
-        <div
-            ref={divRef}
-            className='w-full flex flex-col my-2 p-4 max-h-[20rem] overflow-y-auto'
-        >
-            {transcribedData?.chunks &&
-                transcribedData.chunks.map((chunk, i) => (
-                    <div
-                        key={`${i}-${chunk.text}`}
-                        className='w-full flex flex-row mb-2 bg-white rounded-lg p-4 shadow-xl shadow-black/5 ring-1 ring-slate-700/10'
-                    >
-                        <div className='mr-5'>
-                            {formatAudioTimestamp(chunk.timestamp[0])}
+        <div className='w-full flex flex-col my-2 p-4'>
+            <div
+                ref={divRef}
+                className='w-full flex flex-col mb-4 max-h-[20rem] overflow-y-auto'
+            >
+                {transcribedData?.chunks &&
+                    transcribedData.chunks.map((chunk, i) => (
+                        <div
+                            key={`${i}-${chunk.text}`}
+                            className='w-full flex flex-row mb-2 bg-white rounded-lg p-4 shadow-xl shadow-black/5 ring-1 ring-slate-700/10'
+                        >
+                            <div className='mr-5'>
+                                {formatAudioTimestamp(chunk.timestamp[0])}
+                            </div>
+                            {chunk.text}
                         </div>
-                        {chunk.text}
-                    </div>
-                ))}
+                    ))}
+            </div>
+            {transcribedData && (<div className='w-full mb-4 bg-blue-100 rounded-lg p-4 shadow-xl shadow-black/5 ring-1 ring-slate-700/10'>
+                <h3 className='text-lg font-semibold mb-2'>Summary:</h3>
+                <p>{transcribedData?.summary || "Generating summary..."}</p>
+            </div>)}
             {transcribedData && !transcribedData.isBusy && (
                 <div className='w-full text-right'>
                     <button

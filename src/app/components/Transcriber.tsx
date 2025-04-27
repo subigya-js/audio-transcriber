@@ -1,8 +1,8 @@
 "use client";
 
 import { useTranscriber } from "../../hooks/useTranscriber";
-import Transcript from "./Transcript";
 import { AudioManager } from "./AudioManager";
+import Transcript from "./Transcript";
 
 const Transcriber = () => {
     const transcriber = useTranscriber();
@@ -14,7 +14,7 @@ const Transcriber = () => {
                     Audio Transcriber
                 </h1>
                 <h2 className='mt-3 mb-5 px-4 text-center text-1xl font-semibold tracking-tight text-slate-900 sm:text-2xl'>
-                    A browser-based audio transcriber
+                    A browser-based audio transcriber and summarizer
                 </h2>
                 <AudioManager transcriber={transcriber} />
                 <Transcript transcribedData={transcriber.output} />
