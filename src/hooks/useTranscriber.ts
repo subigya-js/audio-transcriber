@@ -23,7 +23,8 @@ interface TranscriberUpdateData {
 
 interface TranscriberCompleteData {
     data: {
-        text: string;
+        transcript: string;
+        summary: string;
         chunks: { text: string; timestamp: [number, number | null] }[];
     };
 }
@@ -31,6 +32,7 @@ interface TranscriberCompleteData {
 export interface TranscriberData {
     isBusy: boolean;
     text: string;
+    summary: string;
     chunks: { text: string; timestamp: [number, number | null] }[];
 }
 
@@ -85,17 +87,19 @@ export function useTranscriber(): Transcriber {
                 setTranscript({
                     isBusy: true,
                     text: updateMessage.data[0],
+                    summary: "", // Add an empty summary for partial updates
                     chunks: updateMessage.data[1].chunks,
                 });
                 break;
             case "complete":
-                // Received complete transcript
+                // Received complete transcript and summary
                 // console.log("complete", message);
                 // eslint-disable-next-line no-case-declarations
                 const completeMessage = message as TranscriberCompleteData;
                 setTranscript({
                     isBusy: false,
-                    text: completeMessage.data.text,
+                    text: completeMessage.data.transcript,
+                    summary: completeMessage.data.summary,
                     chunks: completeMessage.data.chunks,
                 });
                 setIsBusy(false);

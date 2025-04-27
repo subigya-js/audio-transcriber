@@ -1,8 +1,11 @@
 /* eslint-disable camelcase */
-import { pipeline, env } from "@xenova/transformers";
+import { env, pipeline } from "@xenova/transformers";
 
 // Disable local models
 env.allowLocalModels = false;
+
+// Summarization model
+const SUMMARIZATION_MODEL = "Xenova/distilbart-cnn-6-6";
 
 // Define model factories
 // Ensures only one model is created of each type
@@ -36,9 +39,7 @@ class PipelineFactory {
 self.addEventListener("message", async (event) => {
     const message = event.data;
 
-    // Do some work...
-    // TODO use message data
-    let transcript = await transcribe(
+    let result = await transcribe(
         message.audio,
         message.model,
         message.multilingual,
@@ -46,13 +47,17 @@ self.addEventListener("message", async (event) => {
         message.subtask,
         message.language,
     );
-    if (transcript === null) return;
+    if (result === null) return;
 
     // Send the result back to the main thread
     self.postMessage({
         status: "complete",
-        task: "automatic-speech-recognition",
-        data: transcript,
+        task: "automatic-speech-recognition-and-summarization",
+        data: {
+            transcript: result.text,
+            summary: result.summary,
+            chunks: result.chunks
+        },
     });
 });
 
@@ -60,6 +65,12 @@ class AutomaticSpeechRecognitionPipelineFactory extends PipelineFactory {
     static task = "automatic-speech-recognition";
     static model = null;
     static quantized = null;
+}
+
+class SummarizationPipelineFactory extends PipelineFactory {
+    static task = "summarization";
+    static model = SUMMARIZATION_MODEL;
+    static quantized = true;
 }
 
 const transcribe = async (
@@ -93,6 +104,11 @@ const transcribe = async (
     // Load transcriber model
     let transcriber = await p.getInstance((data) => {
         self.postMessage(data);
+    });
+
+    // Load summarizer model
+    let summarizer = await SummarizationPipelineFactory.getInstance((data) => {
+        self.postMessage({ ...data, task: "summarization" });
     });
 
     const time_precision =
@@ -177,6 +193,16 @@ const transcribe = async (
         });
         return null;
     });
+
+    if (output !== null) {
+        // Summarize the transcription
+        const summary = await summarizer(output.text, {
+            max_length: 100,
+            min_length: 30,
+        });
+
+        output.summary = summary[0].summary_text;
+    }
 
     return output;
 };

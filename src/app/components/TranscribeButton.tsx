@@ -19,9 +19,9 @@ export function TranscribeButton(props: Props): React.ReactNode {
             {isModelLoading ? (
                 <Spinner text={"Loading model..."} />
             ) : isTranscribing ? (
-                <Spinner text={"Transcribing..."} />
+                <Spinner text={"Processing..."} />
             ) : (
-                "Transcribe Audio"
+                "Process Audio"
             )}
         </button>
     );
