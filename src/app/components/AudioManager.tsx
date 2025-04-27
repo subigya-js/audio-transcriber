@@ -1,13 +1,10 @@
 "use client";
 
-import axios from "axios";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Transcriber } from "../../hooks/useTranscriber";
+import React, { useRef, useState } from "react";
+import { Transcriber, TranscriberData } from "../../hooks/useTranscriber";
 import Constants from "../../utils/Constants";
 import AudioPlayer from "./AudioPlayer";
-// import AudioRecorder from "./AudioRecorder";
 import Modal from "./modal/Modal";
-// import { UrlInput } from "./modal/UrlInput";
 import Progress from "./Progress";
 import { TranscribeButton } from "./TranscribeButton";
 
@@ -131,8 +128,8 @@ export enum AudioSource {
     // RECORDING = "RECORDING",
 }
 
-export function AudioManager(props: { transcriber: Transcriber }) {
-    const [progress, setProgress] = useState<number | undefined>(undefined);
+export function AudioManager(props: { transcriber: Transcriber & { output?: TranscriberData } }) {
+    // const [progress, setProgress] = useState<number | undefined>(undefined);
     const [audioData, setAudioData] = useState<
         | {
             buffer: AudioBuffer;
@@ -142,116 +139,11 @@ export function AudioManager(props: { transcriber: Transcriber }) {
         }
         | undefined
     >(undefined);
-    const [audioDownloadUrl, setAudioDownloadUrl] = useState<
-        string | undefined
-    >(undefined);
-    // const [isMediaDevicesAvailable, setIsMediaDevicesAvailable] = useState(false);
-
-    const isAudioLoading = progress !== undefined;
-
-    const setAudioFromDownload = useCallback(async (
-        data: ArrayBuffer,
-        mimeType: string,
-    ) => {
-        const audioCTX = new AudioContext({
-            sampleRate: Constants.SAMPLING_RATE,
-        });
-        const blobUrl = URL.createObjectURL(
-            new Blob([data], { type: "audio/*" }),
-        );
-        const decoded = await audioCTX.decodeAudioData(data);
-        setAudioData({
-            buffer: decoded,
-            url: blobUrl,
-            source: AudioSource.URL,
-            mimeType: mimeType,
-        });
-    }, []);
-
-    // const setAudioFromRecording = useCallback(async (data: Blob) => {
-    //     resetAudio();
-    //     setProgress(0);
-    //     const blobUrl = URL.createObjectURL(data);
-    //     const fileReader = new FileReader();
-    //     fileReader.onprogress = (event) => {
-    //         setProgress(event.loaded / event.total || 0);
-    //     };
-    //     fileReader.onloadend = async () => {
-    //         const audioCTX = new AudioContext({
-    //             sampleRate: Constants.SAMPLING_RATE,
-    //         });
-    //         const arrayBuffer = fileReader.result as ArrayBuffer;
-    //         const decoded = await audioCTX.decodeAudioData(arrayBuffer);
-    //         setProgress(undefined);
-    //         setAudioData({
-    //             buffer: decoded,
-    //             url: blobUrl,
-    //             source: AudioSource.RECORDING,
-    //             mimeType: data.type,
-    //         });
-    //     };
-    //     fileReader.readAsArrayBuffer(data);
-    // }, [resetAudio]);
-
-    const downloadAudioFromUrl = useCallback(async (
-        requestAbortController: AbortController,
-    ) => {
-        if (audioDownloadUrl) {
-            try {
-                setAudioData(undefined);
-                setProgress(0);
-                const { data, headers } = (await axios.get(audioDownloadUrl, {
-                    signal: requestAbortController.signal,
-                    responseType: "arraybuffer",
-                    onDownloadProgress(progressEvent) {
-                        setProgress(progressEvent.progress || 0);
-                    },
-                })) as {
-                    data: ArrayBuffer;
-                    headers: { "content-type": string };
-                };
-
-                let mimeType = headers["content-type"];
-                if (!mimeType || mimeType === "audio/wave") {
-                    mimeType = "audio/wav";
-                }
-                setAudioFromDownload(data, mimeType);
-            } catch (error) {
-                console.log("Request failed or aborted", error);
-            } finally {
-                setProgress(undefined);
-            }
-        }
-    }, [audioDownloadUrl, setAudioFromDownload]);
-
-    // When URL changes, download audio
-    useEffect(() => {
-        if (audioDownloadUrl) {
-            const requestAbortController = new AbortController();
-            downloadAudioFromUrl(requestAbortController);
-            return () => {
-                requestAbortController.abort();
-            };
-        }
-    }, [audioDownloadUrl, downloadAudioFromUrl]);
-
-    // // Check for media devices availability
-    // useEffect(() => {
-    //     setIsMediaDevicesAvailable(!!navigator.mediaDevices);
-    // }, []);
 
     return (
         <>
             <div className='flex flex-col justify-center items-center rounded-lg bg-white shadow-xl shadow-black/5 ring-1 ring-slate-700/10'>
                 <div className='flex flex-row space-x-2 py-2 w-full px-2 cursor-pointer'>
-                    {/* <UrlTile
-                        icon={<AnchorIcon />}
-                        text={"From URL"}
-                        onUrlUpdate={(e) => {
-                            props.transcriber.onInputChange();
-                            setAudioDownloadUrl(e);
-                        }}
-                    /> */}
                     {/* <VerticalBar /> */}
                     <FileTile
                         icon={<FolderIcon />}
@@ -266,25 +158,7 @@ export function AudioManager(props: { transcriber: Transcriber }) {
                             });
                         }}
                     />
-                    {/* {isMediaDevicesAvailable && (
-                        <>
-                            <VerticalBar />
-                            <RecordTile
-                                icon={<MicrophoneIcon />}
-                                text={"Record"}
-                                setAudioData={(e) => {
-                                    props.transcriber.onInputChange();
-                                    setAudioFromRecording(e);
-                                }}
-                            />
-                        </>
-                    )} */}
                 </div>
-                {
-                    <AudioDataBar
-                        progress={isAudioLoading ? progress : +!!audioData}
-                    />
-                }
             </div>
             {audioData && (
                 <>
@@ -483,81 +357,6 @@ function SettingsModal(props: {
     );
 }
 
-function AudioDataBar(props: { progress: number }) {
-    return <ProgressBar progress={`${Math.round(props.progress * 100)}%`} />;
-}
-
-function ProgressBar(props: { progress: string }) {
-    return (
-        <div className='w-full bg-gray-200 rounded-full h-1 dark:bg-gray-700'>
-            <div
-                className='bg-blue-600 h-1 rounded-full transition-all duration-100'
-                style={{ width: props.progress }}
-            ></div>
-        </div>
-    );
-}
-
-// function UrlTile(props: {
-//     icon: React.ReactNode;
-//     text: string;
-//     onUrlUpdate: (url: string) => void;
-// }) {
-//     const [showModal, setShowModal] = useState(false);
-
-//     const onClick = () => {
-//         setShowModal(true);
-//     };
-
-//     const onClose = () => {
-//         setShowModal(false);
-//     };
-
-//     const onSubmit = (url: string) => {
-//         props.onUrlUpdate(url);
-//         onClose();
-//     };
-
-//     return (
-//         <>
-//             <Tile icon={props.icon} text={props.text} onClick={onClick} />
-//             <UrlModal show={showModal} onSubmit={onSubmit} onClose={onClose} />
-//         </>
-//     );
-// }
-
-// function UrlModal(props: {
-//     show: boolean;
-//     onSubmit: (url: string) => void;
-//     onClose: () => void;
-// }) {
-//     const [url, setUrl] = useState(Constants.getDefaultAudioUrl());
-
-//     const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-//         setUrl(event.target.value);
-//     };
-
-//     const onSubmit = () => {
-//         props.onSubmit(url);
-//     };
-
-//     return (
-//         <Modal
-//             show={props.show}
-//             title={"From URL"}
-//             content={
-//                 <>
-//                     {"Enter the URL of the audio file you want to load."}
-//                     <UrlInput onChange={onChange} value={url} />
-//                 </>
-//             }
-//             onClose={props.onClose}
-//             submitText={"Load"}
-//             onSubmit={onSubmit}
-//         />
-//     );
-// }
-
 function FileTile(props: {
     icon: React.ReactNode;
     text: string;
@@ -616,79 +415,6 @@ function FileTile(props: {
     );
 }
 
-// function RecordTile(props: {
-//     icon: React.ReactNode;
-//     text: string;
-//     setAudioData: (data: Blob) => void;
-// }) {
-//     const [showModal, setShowModal] = useState(false);
-
-//     const onClick = () => {
-//         setShowModal(true);
-//     };
-
-//     const onClose = () => {
-//         setShowModal(false);
-//     };
-
-//     const onSubmit = (data: Blob | undefined) => {
-//         if (data) {
-//             props.setAudioData(data);
-//             onClose();
-//         }
-//     };
-
-//     return (
-//         <>
-//             <Tile icon={props.icon} text={props.text} onClick={onClick} />
-//             <RecordModal
-//                 show={showModal}
-//                 onSubmit={onSubmit}
-//                 onClose={onClose}
-//             />
-//         </>
-//     );
-// }
-
-// function RecordModal(props: {
-//     show: boolean;
-//     onSubmit: (data: Blob | undefined) => void;
-//     onClose: () => void;
-// }) {
-//     const [audioBlob, setAudioBlob] = useState<Blob>();
-
-//     const onRecordingComplete = (blob: Blob) => {
-//         setAudioBlob(blob);
-//     };
-
-//     const onSubmit = () => {
-//         props.onSubmit(audioBlob);
-//         setAudioBlob(undefined);
-//     };
-
-//     const onClose = () => {
-//         props.onClose();
-//         setAudioBlob(undefined);
-//     };
-
-//     return (
-//         <Modal
-//             show={props.show}
-//             title={"From Recording"}
-//             content={
-//                 <>
-//                     {"Record audio using your microphone"}
-//                     <AudioRecorder onRecordingComplete={onRecordingComplete} />
-//                 </>
-//             }
-//             onClose={onClose}
-//             submitText={"Load"}
-//             submitEnabled={audioBlob !== undefined}
-//             onSubmit={onSubmit}
-//         />
-//     );
-// }
-
 function Tile(props: {
     icon: React.ReactNode;
     text?: string;
@@ -708,24 +434,6 @@ function Tile(props: {
         </button>
     );
 }
-
-// function AnchorIcon() {
-//     return (
-//         <svg
-//             xmlns='http://www.w3.org/2000/svg'
-//             fill='none'
-//             viewBox='0 0 24 24'
-//             strokeWidth='1.5'
-//             stroke='currentColor'
-//         >
-//             <path
-//                 strokeLinecap='round'
-//                 strokeLinejoin='round'
-//                 d='M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244'
-//             />
-//         </svg>
-//     );
-// }
 
 function FolderIcon() {
     return (
@@ -767,21 +475,3 @@ function SettingsIcon() {
         </svg>
     );
 }
-
-// function MicrophoneIcon() {
-//     return (
-//         <svg
-//             xmlns='http://www.w3.org/2000/svg'
-//             fill='none'
-//             viewBox='0 0 24 24'
-//             strokeWidth={1.5}
-//             stroke='currentColor'
-//         >
-//             <path
-//                 strokeLinecap='round'
-//                 strokeLinejoin='round'
-//                 d='M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z'
-//             />
-//         </svg>
-//     );
-// }
