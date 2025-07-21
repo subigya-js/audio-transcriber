@@ -9,7 +9,6 @@ type WorkerConstructor = {
 };
 
 export function useWorker(messageEventHandler: MessageEventHandler): Worker | null {
-    // Create new worker once and never again
     const [worker] = useState(() => createWorker(messageEventHandler));
     return worker;
 }
